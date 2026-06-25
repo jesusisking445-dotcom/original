@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Find a Clinic — HomoDentHealth</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  .filter-bar .form-group { margin-bottom: 0; flex: 1; min-width: 160px; }
+  .filter-bar .form-group.search-field { flex: 2; min-width: 220px; }
+  .clinics-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 28px;
+    margin-top: 28px;
+    align-items: flex-start;
+  }
+  #map {
+    width: 100%;
+    height: 560px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .clinic-list { display: flex; flex-direction: column; gap: 14px; max-height: 560px; overflow-y: auto; padding-right: 4px; }
+  .clinic-item .clinic-card { cursor: pointer; transition: all 0.2s; }
+  .clinic-item .clinic-card:hover { border-color: var(--secondary); box-shadow: var(--shadow); }
+  .clinic-item .clinic-card.active { border-color: var(--primary); background: var(--light-teal); }
+  .locate-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.8rem; font-weight: 600; color: var(--primary);
+    background: var(--light-teal); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: var(--radius); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .locate-btn:hover { background: var(--border); }
+  .gm-fallback {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #D0EFEC, #B8E4E0);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; color: var(--primary); text-align: center; padding: 24px;
+  }
+  .gm-fallback .map-icon { font-size: 3rem; opacity: 0.55; }
+  @media (max-width: 900px) {
+    .clinics-layout { grid-template-columns: 1fr; }
+    #map { height: 360px; }
+    .clinic-list { max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="nav-logo"><img src="images/logo.png" alt="HomoDentHealth" class="nav-logo-img" /></a>
+    <div class="nav-links"><a href="index.html">Home</a><a href="about.html">About</a><a href="services.html">Services</a><a href="clinics.html">Find Clinics</a><a href="blog.html">Health Blog</a><a href="contact.html">Contact</a></div>
+    <div class="nav-actions"><a href="auth.html" class="btn btn-secondary btn-sm">Login</a><a href="auth.html" class="btn btn-primary btn-sm">Register</a></div>
+    <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html">Home</a><a href="about.html">About</a><a href="services.html">Services</a><a href="clinics.html">Find Clinics</a><a href="blog.html">Health Blog</a><a href="contact.html">Contact</a>
+    <div class="m-actions"><a href="auth.html" class="btn btn-secondary btn-sm">Login</a><a href="auth.html" class="btn btn-primary btn-sm">Register</a></div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="breadcrumb"><a href="index.html">Home</a> › Find Clinics</div>
+  <h1>Dental Clinic Directory</h1>
+  <p>Find verified dental clinics near you. Allow location access to see clinics ranked by distance from you.</p>
+</div>
+
+<section style="background:var(--bg);">
+  <div class="container-wide">
+
+    <!-- Filters -->
+    <div class="card">
+      <div class="filter-bar">
+        <div class="form-group search-field">
+          <label for="clinic-search">Search by name or location</label>
+          <input type="text" id="clinic-search" class="form-control" placeholder="e.g. Lagos Dental Centre, Ikeja..."/>
+        </div>
+        <div class="form-group">
+          <label for="filter-specialty">Specialty</label>
+          <select id="filter-specialty" class="form-control">
+            <option value="">All Specialties</option>
+            <option value="general">General Dentistry</option>
+            <option value="orthodontics">Orthodontics</option>
+            <option value="periodontics">Periodontics</option>
+            <option value="pediatric_dentistry">Pediatric Dentistry</option>
+            <option value="oral_surgery">Oral Surgery</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="filter-emergency">Emergency Service</label>
+          <select id="filter-emergency" class="form-control">
+            <option value="">Any</option>
+            <option value="yes">24/7 Emergency Only</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:0;">
+          <label>&nbsp;</label>
+          <button class="locate-btn" id="btn-locate">📍 Use My Location</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map + List -->
+    <div class="clinics-layout">
+      <div id="map">
+        <!-- Google Map renders here. Falls back to static placeholder if API key/network unavailable -->
+        <div class="gm-fallback" id="map-fallback">
+          <div class="map-icon">🗺️</div>
+          <div>
+            <h4 style="color:var(--primary);">Interactive Map</h4>
+            <p style="font-size:0.85rem;color:var(--primary);opacity:0.8;max-width:340px;">
+              The Google Map will display your location and nearby clinics here. Click "Use My Location" to find clinics close to you.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="clinic-list" id="clinic-list">
+        <!-- Clinic items injected by JS, with static fallback below -->
+      </div>
+    </div>
+<!--
+    <div class="alert alert-info mt-24">
+      <span class="alert-icon">ℹ️</span>
+      <div>
+        <strong>Developer note:</strong> This page is wired for the Google Maps JavaScript API. To enable the live interactive map, replace <code>YOUR_GOOGLE_MAPS_API_KEY</code> in <code>clinics.html</code> with a valid API key (enable "Maps JavaScript API" and "Places API" in Google Cloud Console). Without a key, the page still works using the clinic list and a static map placeholder.
+      </div>-->
+    </div>
+
+  </div>
+</section>
+
+<!-- Emergency reminder -->
+<section style="background:white;" class="tight">
+  <div class="container">
+    <div class="emergency-banner">
+      <div class="icon">🚨</div>
+      <div>
+        <h3>Need urgent care right now?</h3>
+        <p>Filter by "24/7 Emergency" above, or call the national emergency line <strong>112</strong> for life-threatening situations.</p>
+      </div>
+      <a href="assessment.html" class="btn" style="background:white;color:#A51C30;border-color:white;font-weight:700;flex-shrink:0;">Run Symptom Check</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-disclaimer"><strong>Medical Disclaimer:</strong> Clinic listings are provided for referral convenience. HomoDentHealth does not guarantee real-time availability — please call ahead to confirm.</div>
+    <div class="footer-grid">
+      <div class="footer-brand"><div class="footer-logo"><img src="images/logo.png" alt="HomoDentHealth" style="height:28px;object-fit:contain;" /></div><p>Nigeria's AI-assisted dental screening and referral platform.</p></div>
+      <div class="footer-col"><h4>Platform</h4><ul><li><a href="assessment.html">Symptom Checker</a></li><li><a href="clinics.html">Find Clinics</a></li><li><a href="appointment.html">Book Appointment</a></li></ul></div>
+      <div class="footer-col"><h4>Company</h4><ul><li><a href="about.html">About Us</a></li><li><a href="services.html">Services</a></li><li><a href="blog.html">Health Blog</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><ul><li><a href="contact.html">Get in Touch</a></li><li><a href="privacy.html">Privacy Policy</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 HomoDentHealth.</span></div>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="main.js"></script>
+
+<!-- ============================================================
+     CLINIC DATA + GOOGLE MAPS INTEGRATION
+     ============================================================ -->
+<script>
+  let CLINICS = [];
+  let userLocation = null;
+  let map, infoWindow;
+  const markers = [];
+
+  async function fetchClinics() {
+    document.getElementById('clinic-list').innerHTML = `<div class="card text-center" style="padding:32px;"><p>Loading clinics…</p></div>`;
+    try {
+      const res = await apiFetch('/api/clinic?limit=50');
+      CLINICS = (res.clinics || []).map(c => ({
+        id: c._id,
+        name: c.name,
+        address: `${c.location?.address || ''}, ${c.location?.city || ''}`,
+        lat: c.location?.coordinates?.coordinates?.[1],
+        lng: c.location?.coordinates?.coordinates?.[0],
+        rating: c.ratings?.averageRating || 0,
+        hours: formatHoursToday(c.hours),
+        emergency: !!c.emergencyAvailable,
+        specialty: (c.specialties && c.specialties[0]) || 'general',
+        icon: c.emergencyAvailable ? '⚕️' : '🏥'
+      }));
+      renderClinicList();
+      if (window.google && window.google.maps && map) plotClinicMarkers();
+    } catch (e) {
+      document.getElementById('clinic-list').innerHTML = `<div class="alert alert-warning"><span class="alert-icon">⚠️</span><div>Couldn't load clinics right now. Please refresh the page.</div></div>`;
+    }
+  }
+
+  function formatHoursToday(hours) {
+    if (!hours) return '';
+    const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    const today = days[new Date().getDay()];
+    const h = hours[today];
+    if (!h || !h.open) return 'Closed today';
+    return `Today ${h.open}–${h.close}`;
+  }
+
+  // ── Distance calculation (Haversine) ──────────────
+  function distanceKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // ── Render clinic list (with optional distance) ───
+  function renderClinicList(filter = {}) {
+    const listEl = document.getElementById('clinic-list');
+    let clinics = [...CLINICS];
+
+    if (userLocation) {
+      clinics.forEach(c => c.distance = (c.lat && c.lng) ? distanceKm(userLocation.lat, userLocation.lng, c.lat, c.lng) : undefined);
+      clinics.sort((a, b) => (a.distance ?? 99999) - (b.distance ?? 99999));
+    }
+
+    if (filter.search) {
+      const q = filter.search.toLowerCase();
+      clinics = clinics.filter(c => c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q));
+    }
+    if (filter.specialty) {
+      clinics = clinics.filter(c => c.specialty === filter.specialty);
+    }
+    if (filter.emergency === 'yes') {
+      clinics = clinics.filter(c => c.emergency);
+    }
+
+    if (!clinics.length) {
+      listEl.innerHTML = `<div class="card text-center" style="padding:32px;"><p>No clinics match your filters. Try adjusting your search.</p></div>`;
+      return;
+    }
+
+    listEl.innerHTML = clinics.map(c => `
+      <div class="clinic-item" data-id="${c.id}">
+        <div class="clinic-card card" onclick="focusClinic('${c.id}')">
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+            <div class="clinic-avatar">${c.icon}</div>
+            <div class="clinic-info">
+              <div class="clinic-name">${c.name}</div>
+              <div class="clinic-meta">📍 ${c.address}</div>
+              <div class="clinic-meta">⭐ ${c.rating.toFixed(1)} · ${c.hours}</div>
+              ${c.distance !== undefined ? `<div class="clinic-meta">📏 ${c.distance.toFixed(1)} km away</div>` : ''}
+              <div class="mt-12" style="display:flex;gap:8px;flex-wrap:wrap;">
+                ${c.emergency ? '<span class="badge badge-severe">24/7 Emergency</span>' : ''}
+                <span class="badge badge-teal">${specialtyLabel(c.specialty)}</span>
+              </div>
+              <div class="mt-12" style="display:flex;gap:8px;">
+                <a href="appointment.html?clinic=${c.id}" class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Book Appointment</a>
+                ${c.lat ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}" target="_blank" class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Get Directions</a>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function specialtyLabel(s) {
+    const map = { general: 'General Dentistry', orthodontics: 'Orthodontics', periodontics: 'Periodontics', pediatric_dentistry: 'Pediatric Dentistry', oral_surgery: 'Oral Surgery', endodontics: 'Endodontics', prosthodontics: 'Prosthodontics', cosmetic: 'Cosmetic Dentistry' };
+    return map[s] || s;
+  }
+
+  // ── Filters wiring ─────────────────────────────────
+  function applyFilters() {
+    renderClinicList({
+      search: document.getElementById('clinic-search').value,
+      specialty: document.getElementById('filter-specialty').value,
+      emergency: document.getElementById('filter-emergency').value
+    });
+  }
+  document.getElementById('clinic-search').addEventListener('input', applyFilters);
+  document.getElementById('filter-specialty').addEventListener('change', applyFilters);
+  document.getElementById('filter-emergency').addEventListener('change', applyFilters);
+
+  // ── Geolocation ─────────────────────────────────────
+  document.getElementById('btn-locate').addEventListener('click', () => {
+    if (!navigator.geolocation) { alert('Geolocation is not supported by your browser.'); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        applyFilters();
+        if (map) {
+          map.setCenter(userLocation);
+          map.setZoom(12);
+          new google.maps.Marker({
+            position: userLocation,
+            map: map,
+            title: "Your Location",
+            icon: { url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png" }
+          });
+          plotClinicMarkers();
+        }
+      },
+      () => alert('Could not get your location. Showing all clinics by default.')
+    );
+  });
+
+  // ── Focus a clinic on the map ───────────────────────
+  window.focusClinic = function(id) {
+    document.querySelectorAll('.clinic-card').forEach(c => c.classList.remove('active'));
+    const item = document.querySelector(`.clinic-item[data-id="${id}"] .clinic-card`);
+    if (item) item.classList.add('active');
+
+    const clinic = CLINICS.find(c => c.id === id);
+    if (map && clinic && clinic.lat) {
+      map.setCenter({ lat: clinic.lat, lng: clinic.lng });
+      map.setZoom(14);
+      const marker = markers.find(m => m.clinicId === id);
+      if (marker) {
+        infoWindow.setContent(`<strong>${clinic.name}</strong><br>${clinic.address}<br>⭐ ${clinic.rating}`);
+        infoWindow.open(map, marker);
+      }
+    }
+  };
+
+  // ── Google Maps init (called by API script onload) ──
+  function plotClinicMarkers() {
+    markers.forEach(m => m.setMap(null));
+    markers.length = 0;
+    CLINICS.filter(c => c.lat && c.lng).forEach(c => {
+      const marker = new google.maps.Marker({
+        position: { lat: c.lat, lng: c.lng },
+        map: map,
+        title: c.name,
+        icon: { url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png" }
+      });
+      marker.clinicId = c.id;
+      marker.addListener('click', () => {
+        infoWindow.setContent(`<strong>${c.name}</strong><br>${c.address}<br>⭐ ${c.rating}<br>${c.hours}`);
+        infoWindow.open(map, marker);
+      });
+      markers.push(marker);
+    });
+  }
+
+  window.initMap = function() {
+    const fallback = document.getElementById('map-fallback');
+    if (fallback) fallback.remove();
+
+    const center = userLocation || { lat: 9.0820, lng: 8.6753 }; // Center of Nigeria
+    map = new google.maps.Map(document.getElementById('map'), {
+      center,
+      zoom: userLocation ? 12 : 6,
+      mapTypeControl: false,
+      streetViewControl: false,
+      styles: [
+        { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] }
+      ]
+    });
+    infoWindow = new google.maps.InfoWindow();
+    if (CLINICS.length) plotClinicMarkers();
+
+    if (userLocation) {
+      new google.maps.Marker({
+        position: userLocation,
+        map: map,
+        title: "Your Location",
+        icon: { url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png" }
+      });
+    }
+  };
+
+  // Load real clinic data from the backend
+  fetchClinics();
+</script>
+
+<!--
+  Google Maps JavaScript API loader.
+  Set GOOGLE_MAPS_API_KEY in config.js to enable the live interactive map
+  (enable "Maps JavaScript API" in Google Cloud Console). The map gracefully
+  falls back to a placeholder + clinic list if no key is set or the script
+  fails to load.
+-->
+<script>
+  (function loadGoogleMaps() {
+    const apiKey = (window.APP_CONFIG && window.APP_CONFIG.GOOGLE_MAPS_API_KEY) || '';
+    if (!apiKey) {
+      console.info("Google Maps API key not set in config.js — showing static fallback. The clinic list still works fully.");
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+    script.async = true;
+    script.onerror = () => console.warn("Failed to load Google Maps — showing static fallback.");
+    document.head.appendChild(script);
+  })();
+</script>
+</body>
+</html>
