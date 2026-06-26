@@ -10,7 +10,7 @@ window.APP_CONFIG = {
   //   Same-host deployment:     http://YOUR-SERVER-IP:4000  (or your domain)
   //   Separate hosting (e.g. backend on Render/Railway):
   //                              https://your-backend.onrender.com
-  API_BASE_URL: 'http://localhost:4000',
+  API_BASE_URL: 'https://original-62rp.onrender.com',
 
   // Paste your Google Maps JavaScript API key here to enable the
   // interactive map on the Clinics page. Without it, the clinic
