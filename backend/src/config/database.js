@@ -10,9 +10,13 @@ const connectDB = async () => {
     logger.info(`MongoDB connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
-    logger.error(`MongoDB connection failed: ${error.message}`);
-    logger.warn('Continuing without MongoDB. Some API routes may be unavailable in demo mode.');
-    return null;
+  console.error(error); // Print the full error
+
+  logger.error(`MongoDB connection failed: ${error.message}`);
+  logger.warn('Continuing without MongoDB. Some API routes may be unavailable in demo mode.');
+
+  return null;
+
   }
 };
 
