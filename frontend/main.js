@@ -267,7 +267,7 @@ const TriageEngine = {
       condition: 'Routine Dental Check-Up Recommended',
       details: 'No urgent dental concern detected based on the symptoms provided. Regular dental visits prevent problems from developing.',
       action: 'Schedule a routine dental check-up every 6 months.',
-      homeCare: ['Brush twice daily with fluoride toothpaste', 'Floss once daily', 'Reduce sugary drinks and snacks', 'Drink fluoridated water', 'Attend regular dental check-ups'],
+      homeCare: ['Brush twice daily with fluoride toothpaste and gently from gum line', 'Floss once daily', 'Reduce sugary drinks and snacks', 'Take self cleansing fruit e.g Water melon, Cucumber', 'Use warm water and salt to gargle your mouth', 'Attend regular dental check-ups'],
       color: '#2E9B6B'
     };
   }
