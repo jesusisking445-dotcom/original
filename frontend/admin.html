@@ -291,8 +291,8 @@ document.querySelectorAll('.sidebar-nav a[data-view]').forEach(link => {
 
 const LEVEL_BADGE = { emergency: 'badge-emergency', severe: 'badge-severe', moderate: 'badge-moderate', mild: 'badge-mild' };
 const STATUS_BADGE = { pending: 'badge-moderate', confirmed: 'badge-teal', in_progress: 'badge-teal', completed: 'badge-mild', cancelled: 'badge-severe', no_show: 'badge-severe' };
-const ROLE_LABEL = { user: 'Patient', dentist: 'Dentist', clinic_manager: 'Clinic Admin', admin: 'Super Admin' };
-const ROLE_BADGE = { user: 'badge-teal', dentist: 'badge-moderate', clinic_manager: 'badge-severe', admin: 'badge-emergency' };
+const ROLE_LABEL = { user: 'Patient', dentist: 'Dentist', clinic_manager: 'Clinic Admin', admin: 'Super Admin', live_chat_agent: 'live-chat Agent', content_admin: 'Content Admin' };
+const ROLE_BADGE = { user: 'badge-teal', dentist: 'badge-moderate', clinic_manager: 'badge-severe', admin: 'badge-emergency', content_admin: 'badge-mild', live_chat_agent: 'badge-mild' };
 
 function fmtDate(d) { return new Date(d).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }); }
 function isToday(d) { return new Date(d).toDateString() === new Date().toDateString(); }

@@ -74,7 +74,9 @@ const DASHBOARD_BY_ROLE = {
   admin: 'admin.html',
   dentist: 'dentist.html',
   clinic_manager: 'clinic-admin.html',
-  user: 'dashboard.html'
+  user: 'dashboard.html',
+  content_admin: 'content-admin.html',
+  live_chat_agent: 'live-chat.html'
 };
 
 function dashboardUrlForRole(role) {

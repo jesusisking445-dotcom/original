@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'dentist', 'admin', 'clinic_manager'],
+    enum: ['user', 'dentist', 'admin', 'clinic_manager', 'content_admin', 'live_chat_agent'],
     default: 'user'
   },
   isVerified: {

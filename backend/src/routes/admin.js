@@ -116,7 +116,7 @@ router.get('/users', asyncHandler(async (req, res) => {
 router.patch('/users/:id/role', asyncHandler(async (req, res) => {
   const { role } = req.body;
 
-  if (!['user', 'dentist', 'admin', 'clinic_manager'].includes(role)) {
+  if (!['user', 'dentist', 'admin', 'clinic_manager', 'content_admin', 'live_chat_agent'].includes(role)) {
     throw new AppError('Invalid role', 400);
   }
 
